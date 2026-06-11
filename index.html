@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#22c55e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Capoeira Quest" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>Capoeira Quest</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <img src="assets/app-logo.png" alt="Logo Capoeira Quest" class="logo-img" />
+      <div>
+        <h1>Capoeira Quest</h1>
+        <p>La théorie entre deux cours</p>
+      </div>
+    </div>
+
+    <div class="header-stats">
+      <span title="Bananes disponibles">🍌 <strong id="credits">0</strong></span>
+      <span title="XP disponible">⭐ <strong id="xp">0</strong></span>
+      <span title="Série quotidienne">🔥 <strong id="streak">0</strong></span>
+    </div>
+  </header>
+
+  <main>
+    <section id="homeScreen" class="screen active">
+      <div class="hero">
+        <div class="hero-content">
+          <div>
+            <span class="eyebrow">Aujourd’hui</span>
+            <h2>Révise sans te cramer.</h2>
+            <p>
+              Chaque jour tu reçois 20 bananes. Chaque test de module coûte 20 bananes.
+              Toutes les 3 bonnes réponses d’affilée, tu peux gagner 1 à 2 bananes bonus.
+            </p>
+
+            <div class="daily-actions">
+              <button class="secondary" onclick="showShop()">Boutique bananes</button>
+            </div>
+          </div>
+
+          <div class="hero-mascot">
+            <img src="assets/mascotte.png" alt="Mascotte Capoeira Quest" />
+          </div>
+        </div>
+      </div>
+
+      <div id="dailyRewardBox" class="reward-box hidden">
+        <strong>🎁 Bonus du jour</strong>
+        <p>Tu as reçu tes 20 bananes quotidiennes.</p>
+      </div>
+
+      <div class="shop-card">
+        <div>
+          <strong>Besoin de continuer ?</strong>
+          <p>Échange ton XP contre des bananes.</p>
+        </div>
+        <button onclick="buyCredits()" class="shop-btn">Acheter +10 bananes · 200 XP</button>
+      </div>
+
+      <div class="progress-grid">
+        <div class="progress-card chants">
+          <span>🎵</span>
+          <strong>Chants</strong>
+          <div class="bar"><div id="progress-chants"></div></div>
+          <small id="label-chants">0%</small>
+        </div>
+
+        <div class="progress-card berimbau">
+          <span>🪘</span>
+          <strong>Berimbau</strong>
+          <div class="bar"><div id="progress-berimbau"></div></div>
+          <small id="label-berimbau">0%</small>
+        </div>
+
+        <div class="progress-card portugais">
+          <span>📚</span>
+          <strong>Portugais</strong>
+          <div class="bar"><div id="progress-portugais"></div></div>
+          <small id="label-portugais">0%</small>
+        </div>
+
+        <div class="progress-card culture">
+          <span>🏛️</span>
+          <strong>Culture</strong>
+          <div class="bar"><div id="progress-culture"></div></div>
+          <small id="label-culture">0%</small>
+        </div>
+
+        <div class="progress-card techniques">
+          <span>🥋</span>
+          <strong>Techniques</strong>
+          <div class="bar"><div id="progress-techniques"></div></div>
+          <small id="label-techniques">0%</small>
+        </div>
+      </div>
+
+      <h2 class="section-title">Parcours</h2>
+      <div class="legend">
+        <span class="legend-done">Validé</span>
+        <span class="legend-open">Disponible</span>
+        <span class="legend-lock">Verrouillé</span>
+        <span class="legend-eval">Évaluation</span>
+      </div>
+
+      <div id="pathMap" class="path-map"></div>
+    </section>
+
+    <section id="lessonScreen" class="screen">
+      <div class="lesson-top">
+        <button class="secondary" onclick="goHome()">← Parcours</button>
+        <div>
+          <h2 id="lessonTitle"></h2>
+          <p id="lessonSubtitle"></p>
+        </div>
+      </div>
+
+      <div id="lessonProgress" class="lesson-progress">
+        <div class="lesson-progress-text">
+          <strong id="questionCounter">1/10</strong>
+          <span id="scoreCounter">Score : 0</span>
+        </div>
+        <div class="bar"><div id="lessonBar"></div></div>
+      </div>
+
+      <article id="songCard" class="song-card hidden"></article>
+
+      <article id="questionCard" class="question-card">
+        <div class="question-topline">
+          <span id="questionKind" class="tag">Quiz</span>
+          <span id="comboBadge" class="combo">Combo x0</span>
+        </div>
+
+        <h3 id="questionText"></h3>
+
+        <div id="holeBox" class="hole-box hidden"></div>
+        <div id="orderBox" class="order-box hidden"></div>
+        <div id="matchBox" class="match-box hidden"></div>
+        <div id="speakBox" class="speak-box hidden"></div>
+        <div id="choicesBox" class="choices"></div>
+
+        <div id="feedback" class="feedback"></div>
+
+        <div class="actions">
+          <button id="validateBtn" class="primary hidden" onclick="validateCurrentQuestion()">Valider</button>
+          <button id="nextBtn" class="primary hidden" onclick="nextQuestion()">Continuer</button>
+        </div>
+      </article>
+    </section>
+
+    <section id="resultScreen" class="screen">
+      <div class="result-card">
+        <h2 id="resultTitle"></h2>
+        <p id="resultText"></p>
+
+        <div class="result-score">
+          <span id="resultPercent">0%</span>
+        </div>
+
+        <div id="mistakesBox"></div>
+
+        <div class="actions center">
+          <button id="retryBtn" class="primary" onclick="retryLesson()">Recommencer · 20 bananes</button>
+          <button class="secondary" onclick="goHome()">Retour parcours</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="libraryScreen" class="screen">
+      <div class="lesson-top">
+        <button class="secondary" onclick="goHome()">← Accueil</button>
+        <div>
+          <h2>📖 Encyclopédie</h2>
+          <p>Les notions se débloquent quand tu les rencontres dans le parcours.</p>
+        </div>
+      </div>
+
+      <div id="libraryList" class="library-list"></div>
+    </section>
+
+    <section id="shopScreen" class="screen">
+      <div class="lesson-top">
+        <button class="secondary" onclick="goHome()">← Accueil</button>
+        <div>
+          <h2>🍌 Boutique bananes</h2>
+          <p>Les bananes limitent le rush et encouragent la révision quotidienne.</p>
+        </div>
+      </div>
+
+      <div class="shop-big">
+        <img src="assets/app-logo.png" alt="" />
+        <img src="assets/mascotte.png" alt="" class="shop-mascot" />
+        <h3>Pack de bananes</h3>
+        <p>Échange 200 XP contre 10 bananes supplémentaires.</p>
+        <button class="primary" onclick="buyCredits()">Acheter +10 bananes</button>
+        <button class="secondary reset-btn" onclick="resetSession()">Réinitialiser la session</button>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <button onclick="goHome()">Parcours</button>
+    <button onclick="showLibrary()">Encyclopédie</button>
+    <button onclick="showShop()">Boutique</button>
+  </nav>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "Capoeira Quest",
+  "short_name": "Capoeira",
+  "description": "Révise la capoeira, les chants et le portugais entre deux cours.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fff7d6",
+  "theme_color": "#22c55e",
+  "icons": [
+    {
+      "src": "assets/app-logo.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
