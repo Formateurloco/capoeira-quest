@@ -804,11 +804,15 @@ function startSpeechQuestion(retryCount = 0) {
     isFinished = true;
 
     const input = document.getElementById("speechWrittenAnswer");
-    if (input) input.value = transcript;
+    if (input) {
+      input.value = transcript;
+      input.focus();
+      input.setSelectionRange(input.value.length, input.value.length);
+    }
 
     button.classList.remove("listening");
     activeRecognition = null;
-    transcriptBox.textContent = "J'ai rempli le champ. Tu peux corriger si besoin puis valider.";
+    transcriptBox.textContent = "J'ai rempli le champ. Corrige le texte si besoin, puis valide.";
   };
 
   recognition.onerror = event => {
