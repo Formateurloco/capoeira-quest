@@ -8,6 +8,7 @@ const ACTIVE_SONG_IDS = new Set([
 ]);
 
 let activeRecognition = null;
+let isResettingSession = false;
 
 let state = {
   xp: 0,
@@ -110,6 +111,8 @@ function save() {
 }
 
 function saveBeforeExit() {
+  if (isResettingSession) return;
+
   save();
 }
 
@@ -318,6 +321,7 @@ function resetSession() {
 
   if (!confirmed) return;
 
+  isResettingSession = true;
   localStorage.removeItem(STORAGE_KEY);
   window.location.reload();
 }

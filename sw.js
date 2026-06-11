@@ -1,4 +1,4 @@
-const CACHE_NAME = "capoeira-quest-v17";
+const CACHE_NAME = "capoeira-quest-v18";
 const APP_FILES = [
   "./",
   "./index.html",
