@@ -348,13 +348,14 @@ function startNode(nodeId) {
 
   const baseQuestions = getQuestionsForNode(node);
   const reviewQuestions = getDelayedReviewQuestions(nodeId);
+  const questionCount = getQuestionCountForNode(node);
 
   let session = buildModuleTestSession(nodeId, baseQuestions, reviewQuestions, testNumber, testMode);
 
-  state.session = session.slice(0, QUESTIONS_PER_NODE);
+  state.session = session.slice(0, questionCount);
 
-  if (state.session.length < QUESTIONS_PER_NODE) {
-    state.session = fillSessionToTen(state.session, baseQuestions);
+  if (state.session.length < questionCount) {
+    state.session = fillSessionToCount(state.session, baseQuestions, questionCount);
   }
 
   save();
@@ -442,12 +443,13 @@ function renderSongCard(node, mode = "compact") {
 
 function getLessonSubtitle(progress, testNumber, testMode, node) {
   const testsRequired = getTestsRequired(node);
+  const questionCount = getQuestionCountForNode(node);
 
   if (testMode === "mistakes") {
     return `Reprise des erreurs du module. 90% requis. Coût : ${LESSON_COST} bananes.`;
   }
 
-  return `10 questions différentes. 90% requis pour avancer. Coût : ${LESSON_COST} bananes.`;
+  return `${questionCount} questions différentes. 90% requis pour avancer. Coût : ${LESSON_COST} bananes.`;
 }
 
 function getNextTestNumber(nodeId) {
@@ -462,6 +464,15 @@ function getTestsRequired(nodeOrId) {
 
   if (node?.kind === "evaluation") return 1;
   return node?.testsRequired || TESTS_PER_MODULE;
+}
+
+function getQuestionCountForNode(nodeOrId) {
+  const node = typeof nodeOrId === "string"
+    ? PATH.find(item => item.id === nodeOrId)
+    : nodeOrId;
+
+  if (node?.skill === "chants" && node.kind === "lesson") return 15;
+  return QUESTIONS_PER_NODE;
 }
 
 function getTestMode(nodeId, testNumber) {
@@ -504,14 +515,16 @@ function buildNodeSession(baseQuestions, reviewQuestions) {
 }
 
 function buildModuleTestSession(nodeId, baseQuestions, reviewQuestions, testNumber, testMode) {
+  const questionCount = getQuestionCountForNode(nodeId);
+
   if (testMode === "mistakes") {
     const progress = state.points[nodeId] || createNodeProgress();
     const mistakes = progress.moduleMistakes
       .map(id => QUESTIONS.find(question => question.id === id))
       .filter(Boolean);
 
-    const selectedMistakes = shuffle(uniqueById(mistakes)).slice(0, QUESTIONS_PER_NODE);
-    return fillSessionToTen(selectedMistakes, baseQuestions);
+    const selectedMistakes = shuffle(uniqueById(mistakes)).slice(0, questionCount);
+    return fillSessionToCount(selectedMistakes, baseQuestions, questionCount);
   }
 
   if (testMode === "evaluation") {
@@ -523,7 +536,11 @@ function buildModuleTestSession(nodeId, baseQuestions, reviewQuestions, testNumb
 
 function buildRotatingNodeSession(baseQuestions, reviewQuestions, testNumber) {
   const selectedReviews = shuffle(uniqueById(reviewQuestions)).slice(0, 2);
-  const newLimit = QUESTIONS_PER_NODE - selectedReviews.length;
+  const node = baseQuestions.length
+    ? PATH.find(item => item.id === baseQuestions[0].node)
+    : null;
+  const questionCount = getQuestionCountForNode(node);
+  const newLimit = questionCount - selectedReviews.length;
   const offset = ((testNumber - 1) * newLimit) % Math.max(1, baseQuestions.length);
   const rotatedQuestions = rotateArray(baseQuestions, offset);
   const selectedNew = takeUniqueQuestions(rotatedQuestions, newLimit, selectedReviews);
@@ -531,12 +548,12 @@ function buildRotatingNodeSession(baseQuestions, reviewQuestions, testNumber) {
   return shuffle([...selectedNew, ...selectedReviews]);
 }
 
-function fillSessionToTen(session, baseQuestions) {
+function fillSessionToCount(session, baseQuestions, count = QUESTIONS_PER_NODE) {
   const result = [...session];
   const source = baseQuestions.length ? baseQuestions : QUESTIONS;
 
   for (const question of shuffle([...source])) {
-    if (result.length >= QUESTIONS_PER_NODE) break;
+    if (result.length >= count) break;
     if (!result.some(item => item.id === question.id)) {
       result.push(question);
     }
@@ -608,7 +625,7 @@ function getTypeLabel(type) {
     hole: "Texte à trou",
     order: "Remettre dans l’ordre",
     match: "Associer",
-    speak: "Parle"
+    speak: "Écris"
   };
 
   return labels[type] || "Exercice";
@@ -708,22 +725,30 @@ function renderSpeak(question) {
 
   box.innerHTML = `
     <div class="speak-target">
-      <span>Répète à voix haute</span>
+      <span>Écris la ligne. Les accents ne comptent pas.</span>
       <strong>${escapeHtml(question.prompt || question.answer)}</strong>
     </div>
+    <input
+      id="speechWrittenAnswer"
+      class="speech-written-answer"
+      type="text"
+      autocomplete="off"
+      placeholder="Écris la phrase ici"
+      onkeydown="handleWrittenSpeechKey(event)"
+    />
     <div class="speech-actions">
       <button class="mic-btn" type="button" ${canListen ? "" : "disabled"} onclick="startSpeechQuestion()">
         <span aria-hidden="true">🎙️</span>
-        <strong>${canListen ? "Parler" : "Micro non disponible"}</strong>
-      </button>
-      <button class="secondary speech-skip-btn" type="button" onclick="skipSpeechQuestion()">
-        Passer
+        <strong>${canListen ? "Dicter au micro" : "Micro non disponible"}</strong>
       </button>
     </div>
     <p id="speechTranscript" class="speech-transcript">
-      ${canListen ? "Appuie sur le micro puis chante/parle la ligne." : "Micro indisponible ici. Tu peux passer pour continuer la session."}
+      ${canListen ? "Tu peux écrire directement ou dicter au micro." : "Écris la phrase pour valider."}
     </p>
   `;
+
+  document.getElementById("validateBtn").classList.remove("hidden");
+  setTimeout(() => document.getElementById("speechWrittenAnswer")?.focus(), 0);
 }
 
 function startSpeechQuestion(retryCount = 0) {
@@ -778,11 +803,12 @@ function startSpeechQuestion(retryCount = 0) {
     hasResult = true;
     isFinished = true;
 
-    const isCorrect = isSpeechAnswerCorrect(transcript, question);
+    const input = document.getElementById("speechWrittenAnswer");
+    if (input) input.value = transcript;
 
     button.classList.remove("listening");
     activeRecognition = null;
-    finishAnswer(question, isCorrect, transcript, question.answer);
+    transcriptBox.textContent = "J'ai rempli le champ. Tu peux corriger si besoin puis valider.";
   };
 
   recognition.onerror = event => {
@@ -799,7 +825,7 @@ function startSpeechQuestion(retryCount = 0) {
       retryCount < SPEECH_MAX_AUTO_RETRIES &&
       (endedTooSoon || event.error === "no-speech")
     ) {
-      transcriptBox.textContent = "Le micro vient de s'activer. Je relance l'écoute...";
+      transcriptBox.textContent = "Le micro vient de s'activer. Je relance la dictée...";
       setTimeout(() => {
         if (state.session[state.sessionIndex]?.id === questionId) {
           startSpeechQuestion(retryCount + 1);
@@ -816,7 +842,7 @@ function startSpeechQuestion(retryCount = 0) {
 
     if (!isFinished && activeRecognition === recognition) {
       activeRecognition = null;
-      transcriptBox.textContent = "Je n'ai rien entendu. Réessaie, ou passe si le micro bloque.";
+      transcriptBox.textContent = "Je n'ai rien entendu. Tu peux écrire la réponse au clavier.";
     }
   };
 
@@ -825,40 +851,39 @@ function startSpeechQuestion(retryCount = 0) {
   } catch {
     button.classList.remove("listening");
     activeRecognition = null;
-    transcriptBox.textContent = "Le micro n'a pas démarré. Réessaie, ou passe pour continuer.";
+    transcriptBox.textContent = "Le micro n'a pas démarré. Tu peux écrire la réponse au clavier.";
   }
 }
 
 function getSpeechErrorMessage(error) {
   if (error === "not-allowed" || error === "service-not-allowed") {
-    return "Le micro est refusé. Autorise-le dans le navigateur, ou passe pour continuer.";
+    return "Le micro est refusé. Tu peux écrire la réponse au clavier.";
   }
 
   if (error === "audio-capture") {
-    return "Je ne trouve pas de micro. Vérifie l'entrée audio, ou passe pour continuer.";
+    return "Je ne trouve pas de micro. Tu peux écrire la réponse au clavier.";
   }
 
-  return "Je n'ai pas pu entendre clairement. Réessaie en parlant près du micro, ou passe pour continuer.";
+  return "Je n'ai pas pu entendre clairement. Tu peux corriger au clavier puis valider.";
 }
 
-function skipSpeechQuestion() {
-  const question = state.session[state.sessionIndex];
-
-  if (activeRecognition) {
-    activeRecognition.abort();
-    activeRecognition = null;
+function handleWrittenSpeechKey(event) {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    validateCurrentQuestion();
   }
-
-  finishAnswer(question, false, "micro passé", question.answer);
 }
 
-function isSpeechAnswerCorrect(transcript, question) {
+function isWrittenSpeechAnswerCorrect(transcript, question) {
   const expected = [question.answer, ...(question.accept || [])].map(normalizeSpeech);
   const heard = normalizeSpeech(transcript);
 
+  if (!heard) return false;
+
   return expected.some(answer => {
     if (!answer) return false;
-    return heard.includes(answer) || answer.includes(heard) || similarityScore(heard, answer) >= 0.72;
+    const isCloseFragment = answer.includes(heard) && heard.length >= Math.max(3, Math.floor(answer.length * 0.65));
+    return heard.includes(answer) || isCloseFragment || similarityScore(heard, answer) >= 0.72;
   });
 }
 
@@ -902,6 +927,27 @@ function validateCurrentQuestion() {
   if (question.type === "hole") validateHole(question);
   if (question.type === "order") validateOrder(question);
   if (question.type === "match") validateMatch(question);
+  if (question.type === "speak") validateSpeak(question);
+}
+
+function validateSpeak(question) {
+  if (activeRecognition) {
+    activeRecognition.abort();
+    activeRecognition = null;
+  }
+
+  const input = document.getElementById("speechWrittenAnswer");
+  const value = input?.value.trim() || "";
+  const isCorrect = isWrittenSpeechAnswerCorrect(value, question);
+
+  if (input) {
+    input.disabled = true;
+    input.style.borderColor = isCorrect ? "var(--green)" : "var(--red)";
+    input.style.background = isCorrect ? "#dcfce7" : "#fee2e2";
+  }
+
+  document.querySelector(".mic-btn")?.setAttribute("disabled", "disabled");
+  finishAnswer(question, isCorrect, value || "vide", question.answer);
 }
 
 function validateHole(question) {

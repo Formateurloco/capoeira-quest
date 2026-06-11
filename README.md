@@ -13,7 +13,7 @@ Application HTML/CSS/JS séparée.
 - Design plus dynamique
 - Logo SVG inclus
 - Parcours sans cordes, basé sur les compétences
-- 10 questions différentes par test quand la banque du module le permet
+- 10 questions différentes par test, 15 pour les modules chanson quand la banque le permet
 - 90% requis pour valider
 - Erreurs reprises dans le test final du module
 
