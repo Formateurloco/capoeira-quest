@@ -3,11 +3,12 @@ const QUESTIONS_PER_NODE = 10;
 const TESTS_PER_MODULE = 5;
 const LESSON_COST = 20;
 const DAILY_CREDITS = 20;
-const XP_PER_CORRECT = 2;
+const XP_PER_CORRECT = 10;
+const XP_DOUBLE_COMBO_INTERVAL = 4;
 const SHOP_XP_COST = 200;
 const SHOP_CREDITS_GAIN = 10;
 const COMBO_REWARD_MIN = 1;
-const COMBO_REWARD_MAX = 2;
+const COMBO_REWARD_MAX = 4;
 
 const PATH = [
   { id: "node_1", number: 1, title: "Chanson : A Maré Tá Cheia", skill: "chants", kind: "lesson", songId: "song_mare_cheia" },

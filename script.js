@@ -904,8 +904,9 @@ function finishAnswer(question, isCorrect, userAnswer, expectedAnswer) {
     stat.correct += 1;
     stat.mastery = Math.min(3, stat.mastery + 1);
     state.correct += 1;
-    state.xp += XP_PER_CORRECT;
     state.correctCombo += 1;
+    const xpGain = getCorrectAnswerXpGain();
+    state.xp += xpGain;
     removeDelayedMistake(question.id);
 
     if (question.unlock && !state.unlockedLibrary.includes(question.unlock)) {
@@ -914,11 +915,12 @@ function finishAnswer(question, isCorrect, userAnswer, expectedAnswer) {
 
     const reward = maybeComboCreditReward();
     const feedback = document.getElementById("feedback");
+    const xpLabel = xpGain > XP_PER_CORRECT ? ` +${xpGain} XP bonus x2.` : "";
     feedback.className = "feedback success pop";
     feedback.textContent =
       reward
-        ? `Boa ! Combo x3 : +${reward} bananes bonus. ${question.explanation}`
-        : `Boa ! ${question.explanation}`;
+        ? `Boa ! Combo x3 : +${reward} bananes bonus.${xpLabel} ${question.explanation}`
+        : `Boa !${xpLabel} ${question.explanation}`;
 
     if (reward) burstBananas();
   } else {
@@ -950,6 +952,14 @@ function rememberModuleMistake(questionId) {
   if (!progress || progress.moduleMistakes.includes(questionId)) return;
 
   progress.moduleMistakes.push(questionId);
+}
+
+function getCorrectAnswerXpGain() {
+  if (state.correctCombo > 0 && state.correctCombo % XP_DOUBLE_COMBO_INTERVAL === 0) {
+    return XP_PER_CORRECT * 2;
+  }
+
+  return XP_PER_CORRECT;
 }
 
 function maybeComboCreditReward() {

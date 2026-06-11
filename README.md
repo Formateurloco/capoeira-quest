@@ -6,7 +6,9 @@ Application HTML/CSS/JS séparée.
 - Bananes quotidiennes : +20 par jour
 - Un test de module coûte 20 bananes
 - Un module se valide avec 4 tests de 10 questions puis un test de reprise des erreurs si nécessaire
-- Toutes les 3 bonnes réponses d'affilée : gain aléatoire de 1 à 2 bananes
+- Bonne réponse : +10 XP
+- Toutes les 4 bonnes réponses d'affilée : XP doublé sur la réponse
+- Toutes les 3 bonnes réponses d'affilée : gain aléatoire de 1 à 4 bananes
 - Boutique : 200 XP = +10 bananes
 - Design plus dynamique
 - Logo SVG inclus
