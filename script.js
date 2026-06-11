@@ -1,5 +1,8 @@
 const STORAGE_KEY = "capoeira_quest_v4_state";
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const SPEECH_EARLY_END_MS = 1800;
+const SPEECH_RETRY_DELAY_MS = 500;
+const SPEECH_MAX_AUTO_RETRIES = 1;
 const ACTIVE_SONG_IDS = new Set([
   "song_mare_cheia",
   "song_folha_seca",
@@ -708,17 +711,22 @@ function renderSpeak(question) {
       <span>Répète à voix haute</span>
       <strong>${escapeHtml(question.prompt || question.answer)}</strong>
     </div>
-    <button class="mic-btn" type="button" ${canListen ? "" : "disabled"} onclick="startSpeechQuestion()">
-      <span aria-hidden="true">🎙️</span>
-      <strong>${canListen ? "Parler" : "Micro non disponible"}</strong>
-    </button>
+    <div class="speech-actions">
+      <button class="mic-btn" type="button" ${canListen ? "" : "disabled"} onclick="startSpeechQuestion()">
+        <span aria-hidden="true">🎙️</span>
+        <strong>${canListen ? "Parler" : "Micro non disponible"}</strong>
+      </button>
+      <button class="secondary speech-skip-btn" type="button" onclick="skipSpeechQuestion()">
+        Passer
+      </button>
+    </div>
     <p id="speechTranscript" class="speech-transcript">
-      ${canListen ? "Appuie sur le micro puis chante/parle la ligne." : "La reconnaissance vocale marche surtout sur Chrome Android ou Safari récent, en HTTPS ou en local."}
+      ${canListen ? "Appuie sur le micro puis chante/parle la ligne." : "Micro indisponible ici. Tu peux passer pour continuer la session."}
     </p>
   `;
 }
 
-function startSpeechQuestion() {
+function startSpeechQuestion(retryCount = 0) {
   const question = state.session[state.sessionIndex];
   const transcriptBox = document.getElementById("speechTranscript");
 
@@ -735,36 +743,113 @@ function startSpeechQuestion() {
   const recognition = new SpeechRecognition();
   activeRecognition = recognition;
   recognition.lang = question.lang || "pt-BR";
-  recognition.interimResults = false;
+  recognition.interimResults = true;
   recognition.maxAlternatives = 3;
 
-  document.querySelector(".mic-btn").classList.add("listening");
-  transcriptBox.textContent = "Je t'écoute...";
+  const button = document.querySelector(".mic-btn");
+  let startedAt = 0;
+  let hasResult = false;
+  let isFinished = false;
+  const questionId = question.id;
+
+  button.classList.add("listening");
+  transcriptBox.textContent = retryCount
+    ? "Le micro est prêt. Parle maintenant..."
+    : "Autorise le micro si demandé, puis parle après le signal.";
+
+  recognition.onstart = () => {
+    startedAt = Date.now();
+    transcriptBox.textContent = "Je t'écoute...";
+  };
 
   recognition.onresult = event => {
-    const transcript = Array.from(event.results[0])
-      .map(result => result.transcript)
-      .join(" ");
-    const isCorrect = isSpeechAnswerCorrect(transcript, question);
+    const results = Array.from(event.results);
+    const transcript = results
+      .flatMap(result => Array.from(result).map(alternative => alternative.transcript))
+      .join(" ")
+      .trim();
+
+    if (!transcript) return;
 
     transcriptBox.textContent = `Entendu : ${transcript}`;
-    document.querySelector(".mic-btn").classList.remove("listening");
+
+    if (!results.some(result => result.isFinal)) return;
+
+    hasResult = true;
+    isFinished = true;
+
+    const isCorrect = isSpeechAnswerCorrect(transcript, question);
+
+    button.classList.remove("listening");
     activeRecognition = null;
     finishAnswer(question, isCorrect, transcript, question.answer);
   };
 
-  recognition.onerror = () => {
-    document.querySelector(".mic-btn").classList.remove("listening");
-    transcriptBox.textContent = "Je n'ai pas pu entendre clairement. Réessaie en parlant près du micro.";
+  recognition.onerror = event => {
+    if (event.error === "aborted") return;
+
+    const elapsed = startedAt ? Date.now() - startedAt : 0;
+    const endedTooSoon = !hasResult && elapsed < SPEECH_EARLY_END_MS;
+
+    button.classList.remove("listening");
     activeRecognition = null;
+
+    if (
+      state.session[state.sessionIndex]?.id === questionId &&
+      retryCount < SPEECH_MAX_AUTO_RETRIES &&
+      (endedTooSoon || event.error === "no-speech")
+    ) {
+      transcriptBox.textContent = "Le micro vient de s'activer. Je relance l'écoute...";
+      setTimeout(() => {
+        if (state.session[state.sessionIndex]?.id === questionId) {
+          startSpeechQuestion(retryCount + 1);
+        }
+      }, SPEECH_RETRY_DELAY_MS);
+      return;
+    }
+
+    transcriptBox.textContent = getSpeechErrorMessage(event.error);
   };
 
   recognition.onend = () => {
-    const button = document.querySelector(".mic-btn");
-    if (button) button.classList.remove("listening");
+    button.classList.remove("listening");
+
+    if (!isFinished && activeRecognition === recognition) {
+      activeRecognition = null;
+      transcriptBox.textContent = "Je n'ai rien entendu. Réessaie, ou passe si le micro bloque.";
+    }
   };
 
-  recognition.start();
+  try {
+    recognition.start();
+  } catch {
+    button.classList.remove("listening");
+    activeRecognition = null;
+    transcriptBox.textContent = "Le micro n'a pas démarré. Réessaie, ou passe pour continuer.";
+  }
+}
+
+function getSpeechErrorMessage(error) {
+  if (error === "not-allowed" || error === "service-not-allowed") {
+    return "Le micro est refusé. Autorise-le dans le navigateur, ou passe pour continuer.";
+  }
+
+  if (error === "audio-capture") {
+    return "Je ne trouve pas de micro. Vérifie l'entrée audio, ou passe pour continuer.";
+  }
+
+  return "Je n'ai pas pu entendre clairement. Réessaie en parlant près du micro, ou passe pour continuer.";
+}
+
+function skipSpeechQuestion() {
+  const question = state.session[state.sessionIndex];
+
+  if (activeRecognition) {
+    activeRecognition.abort();
+    activeRecognition = null;
+  }
+
+  finishAnswer(question, false, "micro passé", question.answer);
 }
 
 function isSpeechAnswerCorrect(transcript, question) {

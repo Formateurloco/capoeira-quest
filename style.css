@@ -765,6 +765,11 @@ button:active {
   line-height: 1.2;
 }
 
+.speech-actions {
+  display: grid;
+  gap: 12px;
+}
+
 .mic-btn {
   width: 100%;
   min-height: 88px;
@@ -790,6 +795,10 @@ button:active {
 .mic-btn.listening {
   animation: pulseMic 1s ease-in-out infinite;
   filter: saturate(1.2);
+}
+
+.speech-skip-btn {
+  width: 100%;
 }
 
 .speech-transcript {
