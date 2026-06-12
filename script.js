@@ -1297,17 +1297,13 @@ function showLibrary() {
 function renderLibrary() {
   const list = document.getElementById("libraryList");
 
-  list.innerHTML = LIBRARY.map(item => {
-    const unlocked = state.unlockedLibrary.includes(item.id);
-
-    return `
-      <article class="library-item ${unlocked ? "" : "locked"}">
-        <h3>${unlocked ? "✅" : "🔒"} ${item.title}</h3>
-        <p>${unlocked ? item.text : "Notion non débloquée pour le moment."}</p>
-        <small>${item.skill}</small>
-      </article>
-    `;
-  }).join("");
+  list.innerHTML = LIBRARY.map(item => `
+    <article class="library-item">
+      <h3>${item.title}</h3>
+      <p>${item.text}</p>
+      <small>${item.skill}</small>
+    </article>
+  `).join("");
 }
 
 function showToast(message) {

@@ -951,10 +951,6 @@ button:active {
   padding: 16px;
 }
 
-.library-item.locked {
-  opacity: .55;
-}
-
 .library-item h3 {
   margin: 0 0 6px;
 }
