@@ -181,6 +181,7 @@ function showScreen(id) {
 function renderHome() {
   renderHeader();
   renderProgress();
+  renderFreeSongLinks();
   renderPath();
   showScreen("homeScreen");
 }
@@ -201,6 +202,24 @@ function renderProgress() {
     document.getElementById(`progress-${skill}`).style.width = percent + "%";
     document.getElementById(`label-${skill}`).textContent = percent + "% maîtrisé";
   });
+}
+
+function renderFreeSongLinks() {
+  const box = document.getElementById("freeSongLinks");
+  if (!box) return;
+
+  const songsWithLinks = SONGS.filter(song => ACTIVE_SONG_IDS.has(song.id) && song.youtubeId);
+
+  box.innerHTML = songsWithLinks.map(song => {
+    const videoUrl = `https://www.youtube.com/watch?v=${encodeURIComponent(song.youtubeId)}`;
+
+    return `
+      <a href="${videoUrl}" target="_blank" rel="noopener">
+        <span>▶</span>
+        <strong>${escapeHtml(song.title)}</strong>
+      </a>
+    `;
+  }).join("");
 }
 
 function renderPath() {

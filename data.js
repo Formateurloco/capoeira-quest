@@ -64,6 +64,7 @@ const SONGS = [
       "Deixa o nego invadiar",
       "O guerreiro senzalero, essa cobra vai fumar"
     ],
+    youtubeId: "I_YmV4dUac4",
     note: "La ligne 'chuê chua' fonctionne comme une réponse facile à reprendre."
   },
   {

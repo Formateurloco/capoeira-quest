@@ -129,6 +129,7 @@ main {
 .lesson-progress,
 .song-card,
 .shop-card,
+.free-listen,
 .shop-big,
 .reward-box {
   background: var(--card);
@@ -277,6 +278,53 @@ button:active {
   background: linear-gradient(145deg, #facc15, #f97316);
   color: #111827;
   box-shadow: 0 8px 0 #c2410c, 0 14px 26px rgba(249,115,22,.24);
+}
+
+.free-listen {
+  padding: 16px;
+  margin-bottom: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.free-listen strong {
+  display: block;
+  font-size: 1.05rem;
+}
+
+.free-listen p {
+  color: var(--muted);
+  font-weight: 800;
+  margin: 4px 0 0;
+}
+
+.free-song-links {
+  display: grid;
+  gap: 8px;
+}
+
+.free-song-links a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  border-radius: 16px;
+  padding: 10px 12px;
+  background: #ecfdf5;
+  color: #065f46;
+  font-weight: 950;
+  text-decoration: none;
+}
+
+.free-song-links span {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #22c55e;
+  color: white;
+  font-size: .8rem;
 }
 
 .reward-box {
