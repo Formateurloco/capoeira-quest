@@ -617,6 +617,32 @@ button:active {
   margin-bottom: 6px;
 }
 
+.song-player {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.song-player iframe {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  border-radius: 16px;
+  background: #111827;
+}
+
+.song-player a,
+.song-listen-link {
+  color: #047857;
+  font-weight: 950;
+  text-decoration: none;
+}
+
+.song-listen-link {
+  display: inline-flex;
+  margin: 0 0 8px;
+}
+
 .lyrics {
   background: #fff;
   border: 2px dashed #d1d5db;

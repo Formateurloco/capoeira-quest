@@ -419,6 +419,7 @@ function renderSongCard(node, mode = "compact") {
         <strong>${escapeHtml(song.title)}</strong>
       </div>
       <p>${escapeHtml(song.focus)}</p>
+      ${renderSongPlayer(song)}
       <div class="lyrics">
         ${song.lines.map(line => `<div>${escapeHtml(line)}</div>`).join("")}
       </div>
@@ -437,7 +438,40 @@ function renderSongCard(node, mode = "compact") {
       <strong>${escapeHtml(song.title)}</strong>
     </div>
     <p>${escapeHtml(song.focus)}</p>
+    ${renderSongListenLink(song)}
     <small>Les paroles complètes ont été vues au début. Les exercices se font maintenant sans aide complète.</small>
+  `;
+}
+
+function renderSongPlayer(song) {
+  if (!song.youtubeId) return "";
+
+  const videoUrl = `https://www.youtube.com/watch?v=${encodeURIComponent(song.youtubeId)}`;
+  const embedUrl = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(song.youtubeId)}`;
+
+  return `
+    <div class="song-player">
+      <iframe
+        src="${embedUrl}"
+        title="Écouter ${escapeHtml(song.title)}"
+        loading="lazy"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen>
+      </iframe>
+      <a href="${videoUrl}" target="_blank" rel="noopener">Ouvrir sur YouTube</a>
+    </div>
+  `;
+}
+
+function renderSongListenLink(song) {
+  if (!song.youtubeId) return "";
+
+  const videoUrl = `https://www.youtube.com/watch?v=${encodeURIComponent(song.youtubeId)}`;
+
+  return `
+    <a class="song-listen-link" href="${videoUrl}" target="_blank" rel="noopener">
+      Écouter la chanson
+    </a>
   `;
 }
 

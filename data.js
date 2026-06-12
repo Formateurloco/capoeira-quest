@@ -44,6 +44,7 @@ const SONGS = [
       "Vou pra Ilha de Maré!",
       "Olha o peixe pulou na maré!"
     ],
+    youtubeId: "kiU0MLbdcKI",
     note: "Retenir le mouvement aide: maré subiu = sobe, maré desceu = desce."
   },
   {
