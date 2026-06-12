@@ -1078,8 +1078,6 @@ function finishAnswer(question, isCorrect, userAnswer, expectedAnswer) {
     stat.mastery = Math.min(3, stat.mastery + 1);
     state.correct += 1;
     state.correctCombo += 1;
-    const xpGain = getCorrectAnswerXpGain();
-    state.xp += xpGain;
     removeDelayedMistake(question.id);
 
     if (question.unlock && !state.unlockedLibrary.includes(question.unlock)) {
@@ -1088,12 +1086,11 @@ function finishAnswer(question, isCorrect, userAnswer, expectedAnswer) {
 
     const reward = maybeComboCreditReward();
     const feedback = document.getElementById("feedback");
-    const xpLabel = xpGain > XP_PER_CORRECT ? ` +${xpGain} XP bonus x2.` : "";
     feedback.className = "feedback success pop";
     feedback.textContent =
       reward
-        ? `Boa ! Combo x3 : +${reward} bananes bonus.${xpLabel} ${question.explanation}`
-        : `Boa !${xpLabel} ${question.explanation}`;
+        ? `Boa ! Combo x3 : +${reward} bananes bonus. ${question.explanation}`
+        : `Boa ! ${question.explanation}`;
 
     if (reward) burstBananas();
   } else {
@@ -1125,14 +1122,6 @@ function rememberModuleMistake(questionId) {
   if (!progress || progress.moduleMistakes.includes(questionId)) return;
 
   progress.moduleMistakes.push(questionId);
-}
-
-function getCorrectAnswerXpGain() {
-  if (state.correctCombo > 0 && state.correctCombo % XP_DOUBLE_COMBO_INTERVAL === 0) {
-    return XP_PER_CORRECT * 2;
-  }
-
-  return XP_PER_CORRECT;
 }
 
 function maybeComboCreditReward() {
@@ -1186,8 +1175,11 @@ function endSession() {
   nodeState.best = Math.max(nodeState.best, percent);
 
   const passed = percent >= PASS_PERCENT;
+  const xpReward = getSessionXpReward(percent, passed);
   let moduleCompleted = false;
   let needsMistakeReview = false;
+
+  state.xp += xpReward;
 
   if (passed) {
     if (node.kind === "evaluation") {
@@ -1205,7 +1197,13 @@ function endSession() {
   }
 
   save();
-  showResult(percent, passed, moduleCompleted, needsMistakeReview);
+  showResult(percent, passed, moduleCompleted, needsMistakeReview, xpReward);
+}
+
+function getSessionXpReward(percent, passed) {
+  if (!passed) return 0;
+  if (percent === 100) return PERFECT_LESSON_XP_REWARD;
+  return LESSON_XP_REWARD;
 }
 
 function clearPassedMistakesFromModule(nodeState) {
@@ -1236,7 +1234,7 @@ function completeNode(node) {
   return true;
 }
 
-function showResult(percent, passed, moduleCompleted, needsMistakeReview) {
+function showResult(percent, passed, moduleCompleted, needsMistakeReview, xpReward) {
   showScreen("resultScreen");
   renderHeader();
 
@@ -1245,13 +1243,13 @@ function showResult(percent, passed, moduleCompleted, needsMistakeReview) {
 
   if (moduleCompleted) {
     document.getElementById("resultTitle").textContent = "Module validé 🎉";
-    document.getElementById("resultText").textContent = "Tous les tests nécessaires sont validés. Le module suivant est débloqué.";
+    document.getElementById("resultText").textContent = `Tous les tests nécessaires sont validés. Le module suivant est débloqué. +${xpReward} XP.`;
     retryButton.textContent = `Rejouer · ${LESSON_COST} bananes`;
   } else if (passed) {
     document.getElementById("resultTitle").textContent = needsMistakeReview ? "Erreurs à reprendre" : "Test validé";
     document.getElementById("resultText").textContent = needsMistakeReview
-      ? "Il reste un test final avec les erreurs du module avant validation."
-      : `Test ${state.currentTestNumber}/${testsRequired} validé. Continue pour valider le module.`;
+      ? `Il reste un test final avec les erreurs du module avant validation. +${xpReward} XP.`
+      : `Test ${state.currentTestNumber}/${testsRequired} validé. Continue pour valider le module. +${xpReward} XP.`;
     retryButton.textContent = `Test suivant · ${LESSON_COST} bananes`;
   } else {
     document.getElementById("resultTitle").textContent = "Test à recommencer";
