@@ -16,7 +16,6 @@ let isResettingSession = false;
 let state = {
   xp: 0,
   credits: 20,
-  streak: 0,
   correctCombo: 0,
   lastDailyCreditDate: null,
   unlockedIndex: 0,
@@ -189,7 +188,6 @@ function renderHome() {
 function renderHeader() {
   document.getElementById("xp").textContent = state.xp;
   document.getElementById("credits").textContent = state.credits;
-  document.getElementById("streak").textContent = state.streak;
 }
 
 function renderProgress() {
@@ -1228,7 +1226,6 @@ function completeNode(node) {
       state.unlockedIndex += 1;
     }
 
-    state.streak += 1;
   }
 
   return true;
